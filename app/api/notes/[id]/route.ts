@@ -1,48 +1,106 @@
 import { NextResponse } from "next/server";
 import {connectToDatabase} from "@/lib/mongodb";
 import Note from "@/models/Note";
-import { ObjectId } from "mongodb";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request): Promise<NextResponse> {
   try {
     await connectToDatabase();
-    const note = await Note.findById(params.id);
+
+    // Extract the `id` parameter from the URL
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Note ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const note = await Note.findById(id);
     if (!note) {
-      return NextResponse.json({ success: false, message: "Note not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Note not found" },
+        { status: 404 }
+      );
     }
     return NextResponse.json({ success: true, data: note });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: (error as Error).message },
+      { status: 500 }
+    );
   }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request): Promise<NextResponse> {
   try {
-    const { title, content } = await req.json();
+    // Extract the `id` parameter from the URL
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Note ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const { title, content } = (await req.json()) as {
+      title: string;
+      content: string;
+    };
+
     await connectToDatabase();
+
     const updatedNote = await Note.findByIdAndUpdate(
-      params.id,
+      id,
       { title, content },
       { new: true, runValidators: true }
     );
+
     if (!updatedNote) {
-      return NextResponse.json({ success: false, message: "Note not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Note not found" },
+        { status: 404 }
+      );
     }
     return NextResponse.json({ success: true, data: updatedNote });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: (error as Error).message },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request): Promise<NextResponse> {
   try {
+    // Extract the `id` parameter from the URL
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Note ID is required" },
+        { status: 400 }
+      );
+    }
+
     await connectToDatabase();
-    const deletedNote = await Note.findByIdAndDelete(params.id);
+
+    const deletedNote = await Note.findByIdAndDelete(id);
     if (!deletedNote) {
-      return NextResponse.json({ success: false, message: "Note not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Note not found" },
+        { status: 404 }
+      );
     }
     return NextResponse.json({ success: true, data: deletedNote });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: (error as Error).message },
+      { status: 500 }
+    );
   }
 }

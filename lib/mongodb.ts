@@ -3,19 +3,26 @@ import mongoose from "mongoose";
 const MONGODB_URI = process.env.MONGODB_URL as string;
 
 if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable in .env");
+  throw new Error("Please define the MONGODB_URL environment variable in .env");
 }
 
-// Create a cached connection object
+// Define the type for cached connection
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
 }
 
-let cached: MongooseCache = (global as any).mongoose;
+/* eslint-disable no-var */
+declare global {
+  var mongooseCache: MongooseCache | undefined; // Use var for global declaration
+}
+/* eslint-enable no-var */
 
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+// Use const for runtime initialization
+const cached: MongooseCache = global.mongooseCache || { conn: null, promise: null };
+
+if (!global.mongooseCache) {
+  global.mongooseCache = cached;
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
