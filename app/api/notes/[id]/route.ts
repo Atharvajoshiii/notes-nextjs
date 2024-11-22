@@ -2,17 +2,18 @@ import { NextResponse } from "next/server";
 import {connectToDatabase} from "@/lib/mongodb";
 import Note from "@/models/Note";
 
-export async function GET(req: Request): Promise<NextResponse> {
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
   try {
     await connectToDatabase();
 
-    // Extract the `id` parameter from the URL
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+    const id = params.id;
 
     if (!id) {
       return NextResponse.json(
-        { success: false, message: "Note ID is required" },
+        { success: false, message: "Note ID is required." },
         { status: 400 }
       );
     }
@@ -20,28 +21,33 @@ export async function GET(req: Request): Promise<NextResponse> {
     const note = await Note.findById(id);
     if (!note) {
       return NextResponse.json(
-        { success: false, message: "Note not found" },
+        { success: false, message: "Note not found." },
         { status: 404 }
       );
     }
+
     return NextResponse.json({ success: true, data: note });
   } catch (error) {
+    console.error("GET /api/notes/[id] Error:", error);
     return NextResponse.json(
-      { success: false, message: (error as Error).message },
+      { success: false, message: "Internal server error." },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(req: Request): Promise<NextResponse> {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
   try {
-    // Extract the `id` parameter from the URL
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+    await connectToDatabase();
+
+    const id = params.id;
 
     if (!id) {
       return NextResponse.json(
-        { success: false, message: "Note ID is required" },
+        { success: false, message: "Note ID is required." },
         { status: 400 }
       );
     }
@@ -51,7 +57,12 @@ export async function PUT(req: Request): Promise<NextResponse> {
       content: string;
     };
 
-    await connectToDatabase();
+    if (!title || !content) {
+      return NextResponse.json(
+        { success: false, message: "Title and content are required." },
+        { status: 400 }
+      );
+    }
 
     const updatedNote = await Note.findByIdAndUpdate(
       id,
@@ -61,45 +72,50 @@ export async function PUT(req: Request): Promise<NextResponse> {
 
     if (!updatedNote) {
       return NextResponse.json(
-        { success: false, message: "Note not found" },
+        { success: false, message: "Note not found." },
         { status: 404 }
       );
     }
+
     return NextResponse.json({ success: true, data: updatedNote });
   } catch (error) {
+    console.error("PUT /api/notes/[id] Error:", error);
     return NextResponse.json(
-      { success: false, message: (error as Error).message },
+      { success: false, message: "Internal server error." },
       { status: 500 }
     );
   }
 }
 
-export async function DELETE(req: Request): Promise<NextResponse> {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
   try {
-    // Extract the `id` parameter from the URL
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+    await connectToDatabase();
+
+    const id = params.id;
 
     if (!id) {
       return NextResponse.json(
-        { success: false, message: "Note ID is required" },
+        { success: false, message: "Note ID is required." },
         { status: 400 }
       );
     }
 
-    await connectToDatabase();
-
     const deletedNote = await Note.findByIdAndDelete(id);
     if (!deletedNote) {
       return NextResponse.json(
-        { success: false, message: "Note not found" },
+        { success: false, message: "Note not found." },
         { status: 404 }
       );
     }
+
     return NextResponse.json({ success: true, data: deletedNote });
   } catch (error) {
+    console.error("DELETE /api/notes/[id] Error:", error);
     return NextResponse.json(
-      { success: false, message: (error as Error).message },
+      { success: false, message: "Internal server error." },
       { status: 500 }
     );
   }

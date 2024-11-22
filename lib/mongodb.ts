@@ -4,6 +4,7 @@ const MONGODB_URI = process.env.MONGODB_URL as string;
 
 if (!MONGODB_URI) {
   throw new Error("Please define the MONGODB_URL environment variable in .env");
+  console.log('erroor occured')
 }
 
 // Define the type for cached connection
